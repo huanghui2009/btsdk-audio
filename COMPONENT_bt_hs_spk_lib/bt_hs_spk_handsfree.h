@@ -342,8 +342,10 @@ void bt_hs_spk_handsfree_audio_manager_stream_stop(void);
  * Set the external codec streaming gain via the Audio Manager module.
  *
  * @param[in] am_vol_level - from AM_VOL_LEVEL_LOW to AM_VOL_LEVEL_HIGH
+ * @param[in] am_vol_effect_event - indicate the reason of VOLUME_EFFECT,
+ *            it should be handled in user application if VOLUME_EFFECT enabled.
  */
-void bt_hs_spk_handsfree_audio_manager_stream_volume_set(int32_t am_vol_level);
+void bt_hs_spk_handsfree_audio_manager_stream_volume_set(int32_t am_vol_level, uint8_t am_vol_effect_event);
 
 #ifdef NREC_ENABLE
 /**

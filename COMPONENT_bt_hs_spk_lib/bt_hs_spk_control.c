@@ -745,7 +745,7 @@ wiced_result_t bt_hs_spk_post_stack_init(bt_hs_spk_control_config_t *p_config)
     wiced_am_init();
 
     /* Open and Close the Codec now (Boot time) to prevent DSP download delay later */
-#ifdef DSP_BOOT_RAMDOWNLOAD
+    /* Pre-initialization also can prevent pop sound for playing audio first time */
     stream_id = wiced_am_stream_open(A2DP_PLAYBACK);
     if (stream_id == WICED_AUDIO_MANAGER_STREAM_ID_INVALID)
     {
@@ -758,7 +758,6 @@ wiced_result_t bt_hs_spk_post_stack_init(bt_hs_spk_control_config_t *p_config)
             WICED_BT_TRACE("Err: wiced_am_stream_close\n");
         }
     }
-#endif
 
     /* Init. Audio Module. */
     result = bt_hs_spk_audio_init(&p_config->audio,
@@ -1992,8 +1991,7 @@ void bt_hs_spk_control_btm_event_handler_power_management_status(wiced_bt_power_
         {
             /* Check if voice connection exists and the voice connection does not belong
              * to the peer device. */
-            if (bt_hs_spk_handsfree_sco_connection_check(NULL) &&
-                (bt_hs_spk_handsfree_sco_connection_check(p_event_data->bd_addr) == WICED_FALSE))
+            if (bt_hs_spk_handsfree_sco_connection_check(NULL))
             {
                 /* In the multi-point scenario, the sniff attempt(s) for iPhone (only one sniff attempt)
                  * may be interrupted by the ongoing SCO data due to the priority setting in the controller.

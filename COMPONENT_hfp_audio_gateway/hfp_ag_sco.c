@@ -150,6 +150,7 @@ void hfp_ag_sco_close( hfp_ag_session_cb_t *p_scb )
 void hfp_ag_sco_management_callback( wiced_bt_management_evt_t event, wiced_bt_management_evt_data_t *p_event_data )
 {
     hfp_ag_session_cb_t *p_scb;
+    hfp_ag_event_t ap_event;
 
     switch ( event )
     {
@@ -158,11 +159,13 @@ void hfp_ag_sco_management_callback( wiced_bt_management_evt_t event, wiced_bt_m
 
             if ( ( p_scb = hfp_ag_find_scb_by_sco_index( p_event_data->sco_connected.sco_index ) ) != NULL )
             {
-                p_scb->retry_with_sco_only = WICED_FALSE;
-                p_scb->b_sco_opened        = WICED_TRUE;
+                p_scb->retry_with_sco_only        = WICED_FALSE;
+                p_scb->b_sco_opened               = WICED_TRUE;
 
                 /* call app callback */
-                hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_AUDIO_OPEN, p_scb->app_handle, NULL );
+                ap_event.audio_open.wbs_supported = p_scb->peer_supports_msbc;
+                ap_event.audio_open.wbs_used      = p_scb->msbc_selected;
+                hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_AUDIO_OPEN, p_scb->app_handle, &ap_event );
             }
             break;
 

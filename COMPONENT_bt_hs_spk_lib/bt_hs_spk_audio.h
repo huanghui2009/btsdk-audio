@@ -86,9 +86,10 @@ typedef enum
 typedef enum
 {
     VOLUME_EFFECT_NONE,                     /* No volume effect, bt_hs_spk_lib will set volume immediately and inform app */
-    VOLUME_EFFECT_INIT_MUTE,                /* Init mute of audio start, app should handle the event and set effect timer */
+    VOLUME_EFFECT_INIT_MUTE,                /* Init mute of audio start(A2DP), app should handle the event and set effect timer */
     VOLUME_EFFECT_RAMP_UP,                  /* Set the volume due to ramp up volume by app's effect timer */
     VOLUME_EFFECT_UNDERRUN_MUTE,            /* Mute due to undderun, app should handle the event and set effect timer */
+    VOLUME_EFFECT_INIT_HFP_MUTE,            /* Init mute of voice start(HFP), it means that voice muted in HFP starting stage */
 } bt_hs_spk_audio_volume_effect_t;
 
 //=================================================================================================

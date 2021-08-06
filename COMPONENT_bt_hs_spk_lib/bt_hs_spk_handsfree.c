@@ -53,6 +53,10 @@
 #include "wiced_transport.h"
 #include "wiced_memory.h"
 
+#ifdef AUDIO_INSERT_ENABLED
+#include "bt_hs_spk_audio_insert.h"
+#endif
+
 #define BT_HS_SPK_HANDSFREE_SCO_CONNECTING_STATE_PROTECTION_TIMEOUT 500  // ms
 
 typedef void (*bt_hs_spk_handsfree_btm_event_sco_handler_t)(handsfree_app_state_t *p_ctx, wiced_bt_management_evt_data_t *p_data);
@@ -231,7 +235,7 @@ static void bt_hs_spk_handsfree_cb_init(void)
     // SCO voice path
     if (bt_hs_spk_get_audio_sink() == AM_UART)
     {
-#if defined(CYW43012C0) || defined(CYW55572A0)
+#if defined(CYW43012C0) || defined(CYW55572A0) || defined(CYW20721B2)
         bt_hs_spk_handsfree_cb.sco_voice_path.path = WICED_BT_SCO_OVER_APP_CB;
         bt_hs_spk_handsfree_cb.sco_voice_path.p_sco_data_cb = &bt_hs_spk_handsfree_sco_data_app_callback;
 #elif defined(CYW55572A1)
@@ -528,6 +532,19 @@ static void bt_hs_spk_handsfree_sco_management_callback_connection_request(hands
         return;
     }
 
+#ifdef AUDIO_INSERT_ENABLED
+    /* Stop audio insert if started. */
+    if (bt_hs_spk_audio_insert_stop() == WICED_BT_SUCCESS)
+    {
+        /* No A2DP streaming. */
+        if (!bt_hs_spk_audio_is_a2dp_streaming_started())
+        {
+            /* Stop the Audio Manager streaming for audio insertion. */
+            bt_hs_spk_audio_audio_manager_stream_stop();
+        }
+    }
+#endif
+
     /* Stop existent Audio Streaming if there is. */
     bt_hs_spk_audio_streaming_stop();
 
@@ -683,6 +700,13 @@ static void bt_hs_spk_handsfree_sco_management_callback_connected(handsfree_app_
     bt_hs_spk_pm_disable();
 
     bt_hs_spk_handsfree_active_call_session_set(p_ctx);
+
+    /* In some phone, like Pixel series, the phone asks the headset to enter sniff mode
+     * even the headset already asks to do SCO connection
+     * In this case, we shall try to set the link back to active mode to avoid
+     * connection issues */
+    bt_hs_spk_control_acl_link_policy_sniff_mode_set(p_ctx->peer_bd_addr, WICED_FALSE);
+    bt_hs_spk_control_bt_power_mode_set(WICED_TRUE, p_ctx->peer_bd_addr, NULL);
 
     /* Configure the Audio Manager. */
     bt_hs_spk_handsfree_audio_manager_stream_start(&p_ctx->audio_config);
@@ -1192,7 +1216,7 @@ static void bt_hs_spk_handsfree_event_handler_call_setup(handsfree_app_state_t *
             /* Changing from 0 to 15 volume level to 0 to 10 volume level for Audio Manager */
             am_volume_level = bt_hs_spk_handsfree_utils_hfp_volume_to_am_volume(hfp_volume_level);
 
-            bt_hs_spk_handsfree_audio_manager_stream_volume_set(am_volume_level);
+            bt_hs_spk_handsfree_audio_manager_stream_volume_set(am_volume_level, VOLUME_EFFECT_NONE);
         }
     }
 
@@ -1338,7 +1362,7 @@ static void bt_hs_spk_handsfree_event_handler_volume_change(handsfree_app_state_
             /* Changing from 0 to 15 volume level to 0 to 10 volume level for Audio Manager */
             volume_level = bt_hs_spk_handsfree_utils_hfp_volume_to_am_volume(p_data->volume.level);
 
-            bt_hs_spk_handsfree_audio_manager_stream_volume_set(volume_level);
+            bt_hs_spk_handsfree_audio_manager_stream_volume_set(volume_level, VOLUME_EFFECT_NONE);
         }
 
         /* Update volume. */
@@ -1678,7 +1702,7 @@ static wiced_result_t bt_audio_hfp_volume_up(void)
                    hfp_volume_level * 100 /  WICED_HANDSFREE_VOLUME_MAX,
                    volume_level);
 
-    bt_hs_spk_handsfree_audio_manager_stream_volume_set(volume_level);
+    bt_hs_spk_handsfree_audio_manager_stream_volume_set(volume_level, VOLUME_EFFECT_NONE);
 
     return WICED_SUCCESS;
 }
@@ -1715,7 +1739,7 @@ static wiced_result_t bt_audio_hfp_volume_down(void)
                    hfp_volume_level * 100 /  WICED_HANDSFREE_VOLUME_MAX,
                    volume_level);
 
-    bt_hs_spk_handsfree_audio_manager_stream_volume_set(volume_level);
+    bt_hs_spk_handsfree_audio_manager_stream_volume_set(volume_level, VOLUME_EFFECT_NONE);
 
     return WICED_SUCCESS;
 }
@@ -2312,8 +2336,13 @@ void bt_hs_spk_handsfree_audio_manager_stream_start(audio_config_t *p_audio_conf
         WICED_BT_TRACE("wiced_am_stream_start failed (%d)\n", status);
     }
 
+#ifdef VOLUME_EFFECT
+    /* Mute volume for hfp starting stage, volume effect will set the volume later */
+    bt_hs_spk_handsfree_audio_manager_stream_volume_set(0, VOLUME_EFFECT_INIT_HFP_MUTE);
+#else
     /* Set speaker volume. */
-    bt_hs_spk_handsfree_audio_manager_stream_volume_set(p_audio_config->volume);
+    bt_hs_spk_handsfree_audio_manager_stream_volume_set(p_audio_config->volume, VOLUME_EFFECT_NONE);
+#endif
 
     /* Set MIC gain. */
     status = wiced_am_stream_set_param(bt_hs_spk_handsfree_cb.stream_id,
@@ -2374,8 +2403,10 @@ void bt_hs_spk_handsfree_audio_manager_stream_stop(void)
  * Set the external codec streaming gain via the Audio Manager module.
  *
  * @param[in] am_vol_level - from AM_VOL_LEVEL_LOW to AM_VOL_LEVEL_HIGH
+ * @param[in] am_vol_effect_event - indicate the reason of VOLUME_EFFECT,
+ *            it should be handled in user application if VOLUME_EFFECT enabled.
  */
-void bt_hs_spk_handsfree_audio_manager_stream_volume_set(int32_t am_vol_level)
+void bt_hs_spk_handsfree_audio_manager_stream_volume_set(int32_t am_vol_level,  uint8_t am_vol_effect_event)
 {
     int32_t new_vol_level;
     wiced_result_t status;
@@ -2402,7 +2433,7 @@ void bt_hs_spk_handsfree_audio_manager_stream_volume_set(int32_t am_vol_level)
     /* Inform Control Module. */
     if (bt_hs_spk_handsfree_cb.p_local_volume_change_cb)
     {
-        (*bt_hs_spk_handsfree_cb.p_local_volume_change_cb)(new_vol_level, VOLUME_EFFECT_NONE);
+        (*bt_hs_spk_handsfree_cb.p_local_volume_change_cb)(new_vol_level, am_vol_effect_event);
     }
 
     /* Set volume. */
@@ -2934,7 +2965,7 @@ void bt_hs_spk_handsfree_sco_voice_path_update(wiced_bool_t uart)
 {
     if (uart)
     {
-#if defined(CYW43012C0) || defined(CYW55572A0)
+#if defined(CYW43012C0) || defined(CYW55572A0) || defined(CYW20721B2)
         bt_hs_spk_handsfree_cb.sco_voice_path.path = WICED_BT_SCO_OVER_APP_CB;
         bt_hs_spk_handsfree_cb.sco_voice_path.p_sco_data_cb = &bt_hs_spk_handsfree_sco_data_app_callback;
 #elif defined(CYW55572A1)

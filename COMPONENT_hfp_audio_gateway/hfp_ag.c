@@ -199,6 +199,7 @@ void hfp_ag_disconnect( uint16_t handle )
 void hfp_ag_audio_open( uint16_t handle )
 {
     hfp_ag_session_cb_t *p_scb = hfp_ag_find_scb_by_app_handle( handle );
+    hfp_ag_event_t ap_event;
 
     if (p_scb == NULL)
         return;
@@ -208,7 +209,9 @@ void hfp_ag_audio_open( uint16_t handle )
     /* If already open, just return success */
     if ( p_scb->b_sco_opened )
     {
-        hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_AUDIO_OPEN, handle, NULL );
+        ap_event.audio_open.wbs_supported = p_scb->peer_supports_msbc;
+        ap_event.audio_open.wbs_used = p_scb->msbc_selected;
+        hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_AUDIO_OPEN, handle, &ap_event );
         return;
     }
 
@@ -409,6 +412,10 @@ void hfp_ag_hci_send_ag_event( uint16_t evt, uint16_t handle, hfp_ag_event_t *p_
     case HCI_CONTROL_AG_EVENT_AT_CMD:
         memcpy(p, p_data->at_cmd.cmd_ptr, p_data->at_cmd.cmd_len);
         p += p_data->at_cmd.cmd_len;
+        break;
+    case HCI_CONTROL_AG_EVENT_AUDIO_OPEN:
+        *p++ = ( uint8_t ) (p_data->audio_open.wbs_supported);
+        *p++ = ( uint8_t ) (p_data->audio_open.wbs_used);
         break;
     default:                             /* Rest have no parameters */
         break;
