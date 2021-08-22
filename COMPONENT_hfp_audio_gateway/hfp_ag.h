@@ -129,6 +129,9 @@ typedef union
     hfp_audio_open_t audio_open;
 } hfp_ag_event_t;
 
+typedef void (* AG_CB )(uint16_t evt, uint16_t handle, hfp_ag_event_t *p_data );
+
+extern void hfp_ag_set_event_cb(AG_CB cb);
 
 /*****************************************************************************
 **  External Function Declarations
