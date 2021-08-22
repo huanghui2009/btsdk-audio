@@ -121,6 +121,9 @@ typedef union
     hfp_ag_at_cmd_t  at_cmd;
 } hfp_ag_event_t;
 
+typedef void (* AG_CB )(uint16_t evt, uint16_t handle, hfp_ag_event_t *p_data );
+
+extern void hfp_ag_set_event_cb(AG_CB cb);
 
 /*****************************************************************************
 **  External Function Declarations

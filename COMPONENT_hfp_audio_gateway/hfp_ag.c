@@ -375,6 +375,13 @@ void hfp_ag_service_level_up( hfp_ag_session_cb_t *p_scb )
     }
 }
 
+
+static AG_CB internal_cb = NULL;
+
+void hfp_ag_set_event_cb(AG_CB cb) {
+  internal_cb = cb;
+}
+
 /*
  * HF event callback. Format the data to be sent over the UART
  *
@@ -388,6 +395,12 @@ void hfp_ag_hci_send_ag_event( uint16_t evt, uint16_t handle, hfp_ag_event_t *p_
     uint8_t   tx_buf[300];
     uint8_t  *p = tx_buf;
     int       i;
+
+    WICED_BT_TRACE( "YA::internal_cb:%p\n", internal_cb );
+    if( internal_cb ){
+      internal_cb(evt, handle, p_data);
+    }
+
 
     WICED_BT_TRACE("[%u]hfp_ag_hci_send_ag_event: Sending Event: %u  to UART\n", handle, evt);
 
