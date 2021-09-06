@@ -82,6 +82,7 @@ void hfp_ag_sco_create( hfp_ag_session_cb_t *p_scb, BOOLEAN is_orig )
         else
         {
 #if (BTM_WBS_INCLUDED == TRUE)
+#if 0
             if ( p_scb->peer_supports_msbc && !p_scb->msbc_selected )
             {
                 /* Send +BCS to the peer and start a 3-second timer waiting for AT+BCS */
@@ -104,6 +105,8 @@ void hfp_ag_sco_create( hfp_ag_session_cb_t *p_scb, BOOLEAN is_orig )
             }
             else
                 WICED_BT_TRACE("Use NBS\n");
+#endif
+            WICED_BT_TRACE("Use NBS\n");
 #endif
             /* Igf setup fails, fall back to regular SCO */
             p_scb->retry_with_sco_only = WICED_TRUE;
