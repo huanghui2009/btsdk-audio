@@ -242,7 +242,7 @@ static uint8_t _send_result_to_hf (hfp_ag_session_cb_t *p_scb, UINT8 code, char 
 
     if ( ret != WICED_BT_RFCOMM_SUCCESS)
     {
-        WICED_BT_TRACE( "[%u]Sent AT fail[0x%02x][ret %d]\n", p_scb->app_handle, code, ret );
+        WICED_BT_TRACE( "[%u]Sent AT fail[0x%02x][ret %d][len exp: %d real: %d]\n", p_scb->app_handle, code, ret, (uint16_t)(p-buf), len );
         return FALSE;
     }
 
@@ -321,6 +321,61 @@ static void _parse_bia_command (hfp_ag_session_cb_t *p_scb, char *p_s)
     }
 }
 
+static BOOL skip_after(char mark, char ** p){
+  while(**p != 0 && **p != mark) {
+    (*p)++;
+  }
+
+  if( **p == 0 ){
+    return FALSE;
+  } else {
+    (*p)++;
+    return TRUE;
+  }
+}
+
+static BOOL skip_mark(char mark, char ** p){
+  while(**p != 0 && **p == mark) {
+    (*p)++;
+  }
+
+  if( **p == 0 ){
+    return FALSE;
+  } else {
+    return TRUE;
+  }
+}
+
+static char _parse_cmer_command (char *ps) {
+  WICED_BT_TRACE( "parse cmer 1: %s", ps );
+  if( !skip_after(',', &ps) ){
+      return '0';
+  }
+  WICED_BT_TRACE( "parse cmer 2:%s", ps );
+
+  if( !skip_after(',', &ps) ){
+      return '0';
+  }
+  WICED_BT_TRACE( "parse cmer 3:%s", ps );
+
+  if( !skip_after(',', &ps) ){
+      return '0';
+  }
+  WICED_BT_TRACE( "parse cmer 4:%s", ps );
+
+
+  if( !skip_mark(' ', &ps) ){
+      return '0';
+  }
+
+  WICED_BT_TRACE( "parse cmer 5: %s", ps );
+
+  if( *ps == 0 ){
+    return '0';
+  } else {
+    return *ps;
+  }
+}
 
 #if (BTM_WBS_INCLUDED == TRUE )
 /*******************************************************************************
@@ -522,16 +577,18 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
             break;
 
         case BTA_AG_HF_CMD_CMER:
-            _send_OK_to_hf(p_scb);                          /* send OK */
-            // 3,0,0,1 or 3,0,0,0
-            if (p_arg[6] == '1')
             {
+              char p = _parse_cmer_command(p_arg);
+
+              if (p == '1')
+              {
                 p_scb->cmer_enabled = WICED_TRUE;
                 hfp_ag_service_level_up (p_scb);
-            }
-            else if (p_arg[6] == '0')
-            {
+              }
+              else if (p == '0')
+              {
                 p_scb->cmer_enabled = WICED_FALSE;
+              }
             }
             break;
 

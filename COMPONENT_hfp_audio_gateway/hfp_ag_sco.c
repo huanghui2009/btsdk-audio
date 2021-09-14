@@ -82,7 +82,7 @@ void hfp_ag_sco_create( hfp_ag_session_cb_t *p_scb, BOOLEAN is_orig )
         else
         {
 #if (BTM_WBS_INCLUDED == TRUE)
-#if 0
+#if 1 
             if ( p_scb->peer_supports_msbc && !p_scb->msbc_selected )
             {
                 /* Send +BCS to the peer and start a 3-second timer waiting for AT+BCS */
@@ -105,8 +105,11 @@ void hfp_ag_sco_create( hfp_ag_session_cb_t *p_scb, BOOLEAN is_orig )
             }
             else
                 WICED_BT_TRACE("Use NBS\n");
-#endif
+#else
+            p_scb->peer_supports_msbc = WICED_FALSE;
+            p_scb->msbc_selected = WICED_FALSE;
             WICED_BT_TRACE("Use NBS\n");
+#endif
 #endif
             /* Igf setup fails, fall back to regular SCO */
             p_scb->retry_with_sco_only = WICED_TRUE;
@@ -166,8 +169,10 @@ void hfp_ag_sco_management_callback( wiced_bt_management_evt_t event, wiced_bt_m
                 p_scb->b_sco_opened               = WICED_TRUE;
 
                 /* call app callback */
+#if (BTM_WBS_INCLUDED==TRUE)
                 ap_event.audio_open.wbs_supported = p_scb->peer_supports_msbc;
                 ap_event.audio_open.wbs_used      = p_scb->msbc_selected;
+#endif
                 hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_AUDIO_OPEN, p_scb->app_handle, &ap_event );
             }
             break;
@@ -209,7 +214,7 @@ void hfp_ag_sco_management_callback( wiced_bt_management_evt_t event, wiced_bt_m
                 /* Start with narrow band defaults */
                 resp = hf_control_esco_params;
 
-#if ( BTM_WBS_INCLUDED == WICED_TRUE )
+#if ( BTM_WBS_INCLUDED == TRUE )
                 /* If WBS is negotiated, override the necessary defaults */
                 if ( p_scb->msbc_selected )
                 {
