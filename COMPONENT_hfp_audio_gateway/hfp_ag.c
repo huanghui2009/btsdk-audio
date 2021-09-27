@@ -156,7 +156,8 @@ void hfp_ag_connect( BD_ADDR bd_addr )
 
     /* set role */
     p_scb->b_is_initiator = WICED_TRUE;
-    p_scb->hf_profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
+    //p_scb->hf_profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
+    p_scb->hf_profile_uuid = UUID_SERVCLASS_HEADSET;
 
     /* do service search */
     hfp_ag_sdp_start_discovery( p_scb );
@@ -224,6 +225,9 @@ void hfp_ag_audio_open( uint16_t handle )
              (ag_features & HFP_AG_FEAT_VREC) && (p_scb->hf_features & HFP_HF_FEAT_VREC) )
         {
             hfp_ag_send_BVRA_to_hf( p_scb, TRUE );
+            hfp_ag_sco_create( p_scb, TRUE );
+        } else {
+          /* For HEADSET profile, directly connect sco */
             hfp_ag_sco_create( p_scb, TRUE );
         }
     }
