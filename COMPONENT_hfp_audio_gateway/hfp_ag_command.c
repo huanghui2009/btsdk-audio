@@ -432,6 +432,7 @@ static void _parse_bac_command (hfp_ag_session_cb_t *p_scb, char *p_s)
 }
 #endif
 
+extern void evt_yp_ptt_press(void);
 
 /*******************************************************************************
 **
@@ -474,7 +475,10 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
             break;
         case BTA_AG_HF_CMD_CKPD:                            /* for HSP */
             _send_OK_to_hf(p_scb);                          /* send OK */
+            WICED_BT_TRACE("Recv CKPD.\n");
+            evt_yp_ptt_press();
 
+            /*
             if(p_scb->hf_profile_uuid == UUID_SERVCLASS_HEADSET)
             {
                 if(!p_scb->b_call_is_up)
@@ -492,12 +496,23 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
                         hfp_ag_audio_close( p_scb->app_handle );
                 }
             }
+            */
             break;
         case BTA_AG_HF_CMD_CLCC:
+            _send_OK_to_hf(p_scb);                          /* send OK */
             hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_CLCC_REQ, p_scb->app_handle, NULL );
             break;
-        case BTA_AG_HF_CMD_BINP:
+
+        case BTA_AG_HF_CMD_BLDN:
+            _send_OK_to_hf(p_scb);                          /* send OK */
+            evt_yp_ptt_press();
+            break;
+
         case BTA_AG_HF_CMD_NREC:
+            _send_OK_to_hf(p_scb);                          /* send OK */
+            break;
+
+        case BTA_AG_HF_CMD_BINP:
         case BTA_AG_HF_CMD_BTRH:
             _send_error_to_hf (p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
             break;
@@ -589,6 +604,7 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
               {
                 p_scb->cmer_enabled = WICED_FALSE;
               }
+              _send_OK_to_hf(p_scb);
             }
             break;
 
@@ -736,6 +752,8 @@ void hfp_ag_parse_AT_command (hfp_ag_session_cb_t *p_scb)
     char        *p_arg;
     INT16       int_arg = 0;
     hfp_ag_at_cmd_t at_cmd;
+
+    WICED_BT_TRACE("Parse AT Command" );
 
     /* Remove CR/LF from the buffer */
     for (i = 0; i < p_scb->res_len; i++)

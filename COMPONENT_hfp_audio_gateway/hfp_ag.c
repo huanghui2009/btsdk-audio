@@ -82,7 +82,8 @@ void sdp_timer_cb( uint32_t arg )
 
         /* set role */
         p_scb->b_is_initiator = WICED_TRUE;
-        p_scb->hf_profile_uuid = UUID_SERVCLASS_HEADSET; //Try to search Headset service again
+        //p_scb->hf_profile_uuid = UUID_SERVCLASS_HEADSET; //Try to search Headset service again
+        p_scb->hf_profile_uuid = UUID_SERVCLASS_HF_HANDSFREE; //Try to search Headset service again
 
         /* do service search */
         hfp_ag_sdp_start_discovery( p_scb );
@@ -156,8 +157,8 @@ void hfp_ag_connect( BD_ADDR bd_addr )
 
     /* set role */
     p_scb->b_is_initiator = WICED_TRUE;
-    //p_scb->hf_profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
-    p_scb->hf_profile_uuid = UUID_SERVCLASS_HEADSET;
+    p_scb->hf_profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
+    //p_scb->hf_profile_uuid = UUID_SERVCLASS_HEADSET;
 
     /* do service search */
     hfp_ag_sdp_start_discovery( p_scb );
@@ -348,6 +349,7 @@ void hfp_ag_process_open_callback( hfp_ag_session_cb_t *p_scb, uint8_t status )
     }
     else
     {
+      /*
         if(p_scb->b_is_initiator && p_scb->hf_profile_uuid == UUID_SERVCLASS_HF_HANDSFREE)
         {
             WICED_BT_TRACE("hfp_ag_process_open_callback: Try HSP\n");
@@ -358,10 +360,11 @@ void hfp_ag_process_open_callback( hfp_ag_session_cb_t *p_scb, uint8_t status )
         }
         else
         {
+          */
             utl_bdcpy( p_scb->hf_addr, (BD_ADDR_PTR) bd_addr_null );
             hfp_ag_rfcomm_start_server( p_scb ); //Restart RFCOMM Server
             hfp_ag_hci_send_ag_event( HCI_CONTROL_AG_EVENT_OPEN, p_scb->app_handle, ( hfp_ag_event_t * ) &open );
-        }
+        //}
     }
 }
 
