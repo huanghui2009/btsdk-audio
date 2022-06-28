@@ -84,7 +84,9 @@ enum
     BTA_AG_HF_CMD_BIND,
     BTA_AG_HF_CMD_BIEV,
     BTA_AG_HF_CMD_BAC,
-    BTA_AG_HF_CMD_CKPD
+    BTA_AG_HF_CMD_CKPD,
+    BTA_AG_HF_CMD_IPHONEACCEV,
+    BTA_AG_HF_CMD_XAPL,
 };
 
 /* AT command interpreter table for HFP */
@@ -136,6 +138,8 @@ static const struct
     {"+BIEV",   BTA_AG_AT_SET,                      BTA_AG_AT_STR,   0,   0},
     {"+BAC",    BTA_AG_AT_SET,                      BTA_AG_AT_STR,   0,   0},
     {"+CKPD",   BTA_AG_AT_SET,                      BTA_AG_AT_INT,   0, 200}, //SC for HSP
+    {"+IPHONEACCEV",   BTA_AG_AT_SET,  BTA_AG_AT_STR,   0,   0},
+    {"+XAPL",   BTA_AG_AT_SET,  BTA_AG_AT_STR,   0,   0},
     {"",        BTA_AG_AT_NONE,                     BTA_AG_AT_STR,   0,   0}
 };
 
@@ -169,7 +173,8 @@ enum
     BTA_AG_RES_RING,
     BTA_AG_RES_VGM,
     BTA_AG_RES_VGS,
-    BTA_AG_RES_CLCC,
+    BTA_AG_RES_CLCC, 
+    BTA_AG_RES_XAPL, 
     BTA_AG_RES_MAX,
 };
 
@@ -189,6 +194,7 @@ const tBTA_AG_RESULT bta_ag_result_tbl[] =
     {"+VGM=",   BTA_AG_RES_FMT_INT},
     {"+VGS=",   BTA_AG_RES_FMT_INT},
     {"+CLCC: ", BTA_AG_RES_FMT_STR},
+    {"+XAPL=iPhone,2", BTA_AG_RES_FMT_NONE},
     {"",        BTA_AG_RES_FMT_STR}
 };
 
@@ -606,6 +612,15 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
               }
               _send_OK_to_hf(p_scb);
             }
+            break;
+            
+        case BTA_AG_HF_CMD_IPHONEACCEV:
+              _send_OK_to_hf(p_scb);
+            break;
+
+        case BTA_AG_HF_CMD_XAPL:
+              _send_result_to_hf(p_scb, BTA_AG_RES_XAPL, NULL, 0);
+              _send_OK_to_hf(p_scb);
             break;
 
 #if (BTM_WBS_INCLUDED == TRUE )
