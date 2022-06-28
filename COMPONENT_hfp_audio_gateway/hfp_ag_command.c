@@ -518,8 +518,10 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
             _send_OK_to_hf(p_scb);                          /* send OK */
             break;
 
-        case BTA_AG_HF_CMD_BINP:
         case BTA_AG_HF_CMD_BTRH:
+            hfp_ag_service_level_up (p_scb);
+
+        case BTA_AG_HF_CMD_BINP:
             _send_error_to_hf (p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
             break;
 
@@ -604,7 +606,7 @@ static void _handle_command_from_hf (hfp_ag_session_cb_t *p_scb, UINT16 cmd, UIN
               if (p == '1')
               {
                 p_scb->cmer_enabled = WICED_TRUE;
-                hfp_ag_service_level_up (p_scb);
+                //hfp_ag_service_level_up (p_scb);
               }
               else if (p == '0')
               {
